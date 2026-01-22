@@ -1,4 +1,4 @@
-# Prayer Times Widget (AI Documentation)
+# Prayer Times Widget (iOS Only)
 
 A Scriptable widget for iOS/macOS that displays Islamic prayer times based on your current location. The widget fetches real-time prayer times from the Aladhan API and caches data locally for offline access.
 
