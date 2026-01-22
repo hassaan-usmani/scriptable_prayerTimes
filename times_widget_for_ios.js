@@ -26,6 +26,7 @@ async function updateCode(hasGoodInternet) {
   }
 }
 
+
 function createSmallWidget(timings) {
 
   const widget = new ListWidget()
@@ -90,7 +91,6 @@ function createMediumWidget(timings) {
   title.textColor = Color.white()
   title.leftAlignText()
 
-  // Add next prayer and time remaining to title row
   titleRow.addSpacer()
   const next = timings["Next"]
   if (next) {
@@ -134,58 +134,6 @@ function createMediumWidget(timings) {
     timeText.rightAlignText()
 
     widget.addSpacer(1)
-  }
-
-  return widget
-}
-
-function createLargeWidget(timings) {
-
-  const widget = new ListWidget()
-  widget.backgroundColor = new Color("#1A1A1A")
-  let title = widget.addText("Prayer Times")
-  title.font = Font.boldSystemFont(16)
-  title.textColor = Color.white()
-  title.leftAlignText()
-  widget.addSpacer(8)
-
-  for (const [prayer, time] of Object.entries(timings)) {
-
-    if (prayer === "Next") continue
-
-    const row = widget.addStack()
-    row.layoutHorizontally()
-    row.centerAlignContent()
-
-    const prayerText = row.addText(prayer)
-    prayerText.font = Font.systemFont(14)
-    prayerText.textColor = Color.white()
-    prayerText.leftAlignText()
-
-    row.addSpacer()
-
-    const timeText = row.addText(time)
-    timeText.font = Font.systemFont(14)
-    timeText.textColor = Color.white()
-    timeText.rightAlignText()
-
-    widget.addSpacer(4)
-  }
-
-  widget.addSpacer(12)
-
-  const next = timings["Next"]
-
-  if (next) {
-
-    const nextRow = widget.addStack()
-    nextRow.layoutHorizontally()
-    nextRow.centerAlignContent()
-
-    const nextText = nextRow.addText(`Next: ${next.prayer} in ${next.hours}h ${next.minutes}m`)
-    nextText.font = Font.systemFont(14)
-    nextText.textColor = Color.orange()
-    nextText.leftAlignText()
   }
 
   return widget
@@ -265,10 +213,6 @@ function createWidget(timings) {
   if (config.widgetFamily === "medium") {
 
     return createMediumWidget(timings)
-
-  } else if (config.widgetFamily === "large") {
-
-    return createLargeWidget(timings)
 
   } else if (config.widgetFamily === "small") {
 
@@ -398,15 +342,72 @@ async function hasGoodInternet(timeoutSeconds = 2) {
   }
 }
 
+async function checkLocationPermission() {
+
+  try {
+
+    Location.setAccuracyToHundredMeters()
+    await Location.current()
+    return true
+
+  } catch (err) {
+
+    return false
+  }
+}
+
+async function retrieveLocation() {
+
+  if (await checkLocationPermission()) {
+
+    Location.setAccuracyToHundredMeters()
+    const loc = await Location.current()
+    const latitude = loc.latitude
+    const longitude = loc.longitude
+
+    return {
+
+      latitude: latitude,
+      longitude: longitude
+    }
+
+  } else {
+
+    const fm = FileManager.local()
+    const dir = fm.documentsDirectory()
+    const filePath = fm.joinPath(dir, "prayer_timings.json")
+
+    if (fm.fileExists(filePath)) {
+
+      const jsonString = fm.readString(filePath)
+      const data = JSON.parse(jsonString)
+      const latitude = data.data.meta.latitude
+      const longitude = data.data.meta.longitude
+
+    } else {
+
+      return null
+    }
+  }
+}
+
 const isInternetOk = await hasGoodInternet(2)
 const output = {}
 
 if (isInternetOk) {
 
-  Location.setAccuracyToHundredMeters()
-  const loc = await Location.current()
-  const latitude = loc.latitude
-  const longitude = loc.longitude
+  const location = await retrieveLocation()
+
+  if (!location) {
+
+    output["Error"] = "Location Permission Denied and No Cached Data Available"
+    const widget = createWidget(output["timings"] || {})
+    Script.setWidget(widget)
+    Script.complete()
+  }
+
+  const latitude = location.latitude
+  const longitude = location.longitude
 
   function formatDateDDMMYYYY(date) {
 
@@ -481,7 +482,6 @@ if (!config.runsInWidget) {
   alert.message = updated
   alert.addAction("OK")
   await alert.present()
-  
 }
 
 Script.setWidget(widget)
