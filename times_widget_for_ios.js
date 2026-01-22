@@ -16,7 +16,7 @@ function createSmallWidget(timings) {
   if (next) {
 
     const nextText = titleRow.addText(`Next: ${next.prayer}`)
-    nextText.font = Font.systemFont(12)
+    nextText.font = Font.systemFont(11)
     nextText.textColor = Color.orange()
     nextText.rightAlignText()
   }
@@ -171,27 +171,42 @@ function createLockscreenWidget(timings) {
   const next = timings["Next"]
 
   if (next) {
-
-    let prayerNameText = next.prayer === "Midnight" ? "Night" : next.prayer
+    
+    let prayerNameText = ""
+    
+    switch (next.prayer) {
+      case "Dhuhr":
+        prayerNameText = "Duhr"
+        break
+      case "Maghreb":
+        prayerNameText = "Mghrb"
+        break
+      case "Midnight":
+        prayerNameText = "Night"
+        break
+      default:
+        prayerNameText = next.prayer
+    }
+    
     let prayerName = widget.addText(`${prayerNameText}`)
 
     switch (next.prayer) {
       case "Fajr":
-        prayerName.font = Font.boldSystemFont(14)
+        prayerName.font = Font.boldSystemFont(15)
         break
       case "Dhuhr":
-        prayerName.font = Font.boldSystemFont(13)
+        prayerName.font = Font.boldSystemFont(14)
         break
       case "Asr":
         prayerName.font = Font.boldSystemFont(16)
         break
       case "Maghreb":
-        prayerName.font = Font.boldSystemFont(8)
+        prayerName.font = Font.boldSystemFont(12)
         break
       case "Isha":
-        prayerName.font = Font.boldSystemFont(13)
+        prayerName.font = Font.boldSystemFont(15)
         break
-      case "Night":
+      case "Midnight":
         prayerName.font = Font.boldSystemFont(13)
         break
       default:
@@ -422,6 +437,8 @@ if (isInternetOk) {
       hours: remaining.hours,
       minutes: remaining.minutes
     }
+    
+    output["timings"] = formattedTimes
 
   } else {
 
