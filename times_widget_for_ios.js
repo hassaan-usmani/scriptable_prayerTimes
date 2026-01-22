@@ -384,6 +384,12 @@ async function retrieveLocation() {
       const latitude = data.data.meta.latitude
       const longitude = data.data.meta.longitude
 
+      return {
+
+        latitude: latitude,
+        longitude: longitude
+      }
+
     } else {
 
       return null
