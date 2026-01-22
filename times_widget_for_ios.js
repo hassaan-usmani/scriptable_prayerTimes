@@ -404,7 +404,6 @@ if (isInternetOk) {
     const widget = createWidget(output["timings"] || {})
     Script.setWidget(widget)
     Script.complete()
-    return
   }
 
   const latitude = location.latitude
