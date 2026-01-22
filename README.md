@@ -20,7 +20,12 @@ This script creates responsive widgets in three sizes:
 
 ### Widget Creation
 
-### `createSmallWidget(timings)`
+#### `updateScript(hasGoodInternet)`
+Pulls the lates version of the script from github
+- **Input**: Variable that tells the function whether there is an internet connection
+- **Output**: Update Status (success/error)
+
+#### `createSmallWidget(timings)`
 Creates a medium-sized widget displaying all prayer times in a clean list format.
 - **Input**: Object with prayer names and times
 - **Output**: ListWidget with prayer times, and next prayer name
@@ -108,5 +113,6 @@ Async function that tests internet connectivity by pinging Google's connectivity
 2. Create a new widget on your home screen or lock screen
 3. Select this script as the widget source
 4. Choose widget size (small/medium)
-5. Widget will automatically update daily with new prayer times
+5. Widget will automatically update every few minutes with new prayer times
+6. To pull the latest version of the script, run the script directly from Scriptable
 
