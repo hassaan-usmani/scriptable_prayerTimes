@@ -1,3 +1,31 @@
+// Variables used by Scriptable.
+// These must be at the very top of the file. Do not edit.
+// icon-color: deep-green; icon-glyph: moon;
+async function updateCode(hasGoodInternet) {
+
+  if (!hasGoodInternet) {
+    return "No Internet"
+  }
+
+  let files = FileManager.local()
+  const iCloudInUse = files.isFileStoredIniCloud(module.filename)
+  files = iCloudInUse ? FileManager.iCloud() : files
+
+  try {
+
+    const url = "https://raw.githubusercontent.com/hassaan-usmani/scriptable_prayerTimes/main/times_widget_for_ios.js"
+    const req = new Request(url)
+    const codeString = await req.loadString()
+    files.writeString(module.filename, codeString)
+    return "The code has been updated."
+
+  } catch (err) {
+
+    console.log("Failed to update code:", err)
+    return "Failed to update code."
+  }
+}
+
 function createSmallWidget(timings) {
 
   const widget = new ListWidget()
@@ -451,7 +479,14 @@ const widget = createWidget(output["timings"] || {})
 
 if (!config.runsInWidget) {
 
-  await widget.presentSmall()
+  const updated = await updateCode(isInternetOk)
+
+  const alert = new Alert()
+  alert.title = "Update Status"
+  alert.message = updated
+  alert.addAction("OK")
+  await alert.present()
+  
 }
 
 Script.setWidget(widget)
