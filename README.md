@@ -1,0 +1,114 @@
+# Prayer Times Widget (AI Documentation)
+
+A Scriptable widget for iOS/macOS that displays Islamic prayer times based on your current location. The widget fetches real-time prayer times from the Aladhan API and caches data locally for offline access.
+
+## Overview
+
+This script creates responsive widgets in three sizes:
+- **Medium**: Prayer times list
+- **Large**: Prayer times list with next prayer countdown
+- **Lockscreen**: Next prayer name and time only
+
+## Features
+
+- 📍 **Location-based**: Automatically detects your current location
+- 🌐 **Online/Offline Support**: Fetches live data when connected; uses cached data when offline
+- 🕐 **12-Hour Format**: Displays prayer times in 12-hour format with AM/PM
+- ⏱️ **Next Prayer Countdown**: Shows hours and minutes until the next prayer
+- 💾 **Local Caching**: Saves prayer times locally for offline access
+- 🎨 **Dark Theme**: Clean dark interface with white and orange accents
+
+## Main Functions
+
+### Widget Creation
+
+#### `createMediumWidget(timings)`
+Creates a medium-sized widget displaying all prayer times in a clean list format.
+- **Input**: Object with prayer names and times
+- **Output**: ListWidget with prayer times
+
+#### `createLargeWidget(timings)`
+Creates a large widget with prayer times and next prayer countdown.
+- **Input**: Object with prayer names, times, and next prayer info
+- **Output**: ListWidget with countdown timer in orange
+
+#### `createLockscreenWidget(timings)`
+Creates a lockscreen widget showing only the next prayer and its time.
+- **Input**: Object with next prayer information
+- **Output**: Compact ListWidget for lockscreen
+
+#### `createWidget(timings)`
+Main dispatcher that creates the appropriate widget based on `config.widgetFamily`.
+
+### Time Management
+
+#### `formatPrayerTimes(timings)`
+Converts 24-hour prayer times from the API to 12-hour format with AM/PM.
+- Handles all 7 prayer times: Fajr, Sunrise, Dhuhr, Asr, Maghrib, Isha, Midnight
+- **Returns**: Object with formatted times (e.g., "5:30 AM")
+
+#### `getTimeUntilNextPrayer(timings)`
+Calculates which prayer comes next and how much time remains.
+- Compares current time with all prayer times
+- Handles day rollover (if no prayers remain today, next is Fajr tomorrow)
+- **Returns**: Object with `prayer` name, `hours`, and `minutes` until next prayer
+
+### Network & Data
+
+#### `hasGoodInternet(timeoutSeconds = 2)`
+Async function that tests internet connectivity by pinging Google's connectivity check server.
+- **Default timeout**: 2 seconds
+- **Returns**: `true` if connected, `false` if offline or timeout
+
+### Data Flow
+
+1. **Internet Check**: Tests connectivity with `hasGoodInternet()`
+2. **Online Path**:
+   - Gets current location using `Location.current()`
+   - Formats today's date as DD-MM-YYYY
+   - Calls Aladhan API: `https://api.aladhan.com/v1/timings/{date}?latitude={lat}&longitude={lon}`
+   - Saves response to local file: `prayer_timings.json`
+3. **Offline Path**:
+   - Retrieves cached `prayer_timings.json` from Scriptable's documents folder
+   - Uses cached data if available; shows error message if not
+
+## API Integration
+
+**Service**: Aladhan Prayer Times API (v1)
+- **Endpoint**: `https://api.aladhan.com/v1/timings/{date}`
+- **Parameters**: 
+  - `date`: DD-MM-YYYY format
+  - `latitude`: Device latitude
+  - `longitude`: Device longitude
+- **Response**: JSON with prayer times for the specified date and location
+
+## File Storage
+
+- **Cache Location**: Scriptable's local documents folder
+- **Cache File**: `prayer_timings.json`
+- **Purpose**: Enables offline access when internet is unavailable
+
+## Prayer Times Displayed
+
+1. **Fajr** - Dawn prayer
+2. **Sunrise** - Time of sunrise
+3. **Dhuhr** - Midday prayer
+4. **Asr** - Afternoon prayer
+5. **Maghrib** - Evening prayer
+6. **Isha** - Night prayer
+7. **Midnight** - Midnight time
+
+## Color Scheme
+
+- **Background**: Dark gray (#1A1A1A)
+- **Text**: White
+- **Accent**: Orange (for next prayer countdown)
+
+## Usage
+
+1. Add this script to Scriptable app
+2. Create a new widget on your home screen or lock screen
+3. Select this script as the widget source
+4. Choose widget size (small/medium/large)
+5. Widget will automatically update daily with new prayer times
+
