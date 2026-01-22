@@ -392,7 +392,6 @@ async function hasGoodInternet(timeoutSeconds = 2) {
     testReq.method = "GET"
     testReq.timeoutInterval = timeoutSeconds
     await testReq.load()
-    console.log(testReq)
     return true
   } catch (err) {
     return false
@@ -425,12 +424,10 @@ if (isInternetOk) {
   req.method = "GET"
   const data = await req.loadJSON()
   const timings = data.data.timings
-  console.log(timings)
 
   const fm = FileManager.local()
   const dir = fm.documentsDirectory()
   const filePath = fm.joinPath(dir, "prayer_timings.json")
-  console.log(filePath)
   fm.writeString(filePath, JSON.stringify(data, null, 2))
 
   const formattedTimes = formatPrayerTimes(timings)
@@ -449,7 +446,6 @@ if (isInternetOk) {
   const fm = FileManager.local()
   const dir = fm.documentsDirectory()
   const filePath = fm.joinPath(dir, "prayer_timings.json")
-  console.log(filePath)
 
   if (fm.fileExists(filePath)) {
 
@@ -470,7 +466,6 @@ if (isInternetOk) {
 
   } else {
 
-    console.log("No Connection")
     output["Error"] = "No Internet Connection and No Cached Data Available"
   }
 }
