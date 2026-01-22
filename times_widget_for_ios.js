@@ -404,6 +404,7 @@ if (isInternetOk) {
     const widget = createWidget(output["timings"] || {})
     Script.setWidget(widget)
     Script.complete()
+    return
   }
 
   const latitude = location.latitude
@@ -471,7 +472,27 @@ if (isInternetOk) {
   }
 }
 
-const widget = createWidget(output["timings"] || {})
+if (output["Error"]) {
+
+  const widget = new ListWidget()
+  widget.backgroundColor = new Color("#1A1A1A")
+  let errorText = widget.addText("Error:")
+  errorText.font = Font.boldSystemFont(14)
+  errorText.textColor = Color.red()
+  widget.addSpacer(4)
+  let messageText = widget.addText(output["Error"])
+  messageText.font = Font.systemFont(13)
+  messageText.textColor = Color.white()
+  messageText.leftAlignText()
+
+  Script.setWidget(widget)
+  Script.complete()
+
+} else {
+
+  const widget = createWidget(output["timings"] || {})
+  Script.setWidget(widget)
+}
 
 if (!config.runsInWidget) {
 
@@ -484,6 +505,5 @@ if (!config.runsInWidget) {
   await alert.present()
 }
 
-Script.setWidget(widget)
 Script.complete()
 
