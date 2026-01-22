@@ -5,32 +5,30 @@ A Scriptable widget for iOS/macOS that displays Islamic prayer times based on yo
 ## Overview
 
 This script creates responsive widgets in three sizes:
-- **Medium**: Prayer times list
-- **Large**: Prayer times list with next prayer countdown
+- **Small**: Prayer times list and Next prayer name
+- **Medium**: Prayer times list and time until next prayer
 - **Lockscreen**: Next prayer name and time only
 
 ## Features
 
-- 📍 **Location-based**: Automatically detects your current location
-- 🌐 **Online/Offline Support**: Fetches live data when connected; uses cached data when offline
-- 🕐 **12-Hour Format**: Displays prayer times in 12-hour format with AM/PM
-- ⏱️ **Next Prayer Countdown**: Shows hours and minutes until the next prayer
-- 💾 **Local Caching**: Saves prayer times locally for offline access
-- 🎨 **Dark Theme**: Clean dark interface with white and orange accents
+- **Location-based**: Automatically detects your current location
+- **12-Hour Format**: Displays prayer times in 12-hour format with AM/PM
+- **Next Prayer Countdown**: Shows hours and minutes until the next prayer
+- **Local Caching**: Saves prayer times locally for offline access
 
 ## Main Functions
 
 ### Widget Creation
 
+### `createSmallWidget(timings)`
+Creates a medium-sized widget displaying all prayer times in a clean list format.
+- **Input**: Object with prayer names and times
+- **Output**: ListWidget with prayer times, and next prayer name
+
 #### `createMediumWidget(timings)`
 Creates a medium-sized widget displaying all prayer times in a clean list format.
 - **Input**: Object with prayer names and times
-- **Output**: ListWidget with prayer times
-
-#### `createLargeWidget(timings)`
-Creates a large widget with prayer times and next prayer countdown.
-- **Input**: Object with prayer names, times, and next prayer info
-- **Output**: ListWidget with countdown timer in orange
+- **Output**: ListWidget with prayer times, and time until next prayer
 
 #### `createLockscreenWidget(timings)`
 Creates a lockscreen widget showing only the next prayer and its time.
@@ -38,7 +36,7 @@ Creates a lockscreen widget showing only the next prayer and its time.
 - **Output**: Compact ListWidget for lockscreen
 
 #### `createWidget(timings)`
-Main dispatcher that creates the appropriate widget based on `config.widgetFamily`.
+Main function that creates the appropriate widget based on `config.widgetFamily`.
 
 ### Time Management
 
@@ -88,15 +86,15 @@ Async function that tests internet connectivity by pinging Google's connectivity
 - **Cache File**: `prayer_timings.json`
 - **Purpose**: Enables offline access when internet is unavailable
 
-## Prayer Times Displayed
+## Times Displayed
 
-1. **Fajr** - Dawn prayer
-2. **Sunrise** - Time of sunrise
-3. **Dhuhr** - Midday prayer
-4. **Asr** - Afternoon prayer
-5. **Maghrib** - Evening prayer
-6. **Isha** - Night prayer
-7. **Midnight** - Midnight time
+1. **Fajr**
+2. **Sunrise**
+3. **Dhuhr**
+4. **Asr**
+5. **Maghrib**
+6. **Isha**
+7. **Midnight**
 
 ## Color Scheme
 
@@ -109,6 +107,6 @@ Async function that tests internet connectivity by pinging Google's connectivity
 1. Add this script to Scriptable app
 2. Create a new widget on your home screen or lock screen
 3. Select this script as the widget source
-4. Choose widget size (small/medium/large)
+4. Choose widget size (small/medium)
 5. Widget will automatically update daily with new prayer times
 
