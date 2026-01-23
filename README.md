@@ -101,12 +101,6 @@ Async function that tests internet connectivity by pinging Google's connectivity
 6. **Isha**
 7. **Midnight**
 
-## Color Scheme
-
-- **Background**: Dark gray (#1A1A1A)
-- **Text**: White
-- **Accent**: Orange (for next prayer countdown)
-
 ## Usage
 
 1. Add this script to Scriptable app

@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Converted HTML</title>
+<style>
+        body {
+            background-color: #181818;
+            color: #e9e9e9;
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #e9e9e9;
+        }
+        code {
+            background-color: #333;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-size: medium;
+            font-family: monospace;
+        }
+        ul, ol {
+            margin-left: 20px;
+        }
+</style>
+</head>
+<body>
+<h1>Prayer Times Widget (iOS Only)</h1>
+<p>A Scriptable widget for iOS/macOS that displays Islamic prayer times based on your current location. The widget fetches real-time prayer times from the Aladhan API and caches data locally for offline access.</p>
+<h2>Overview</h2>
+<p>This script creates responsive widgets in three sizes:
+- <strong>Small</strong>: Prayer times list and Next prayer name
+- <strong>Medium</strong>: Prayer times list and time until next prayer
+- <strong>Lockscreen</strong>: Next prayer name and time only</p>
+<h2>Features</h2>
+<ul>
+<li><strong>Location-based</strong>: Automatically detects your current location</li>
+<li><strong>12-Hour Format</strong>: Displays prayer times in 12-hour format with AM/PM</li>
+<li><strong>Next Prayer Countdown</strong>: Shows hours and minutes until the next prayer</li>
+<li><strong>Local Caching</strong>: Saves prayer times locally for offline access</li>
+</ul>
+<h2>Main Functions</h2>
+<h3>Widget Creation</h3>
+<h4><code>updateScript(hasGoodInternet)</code></h4>
+<p>Pulls the lates version of the script from github
+- <strong>Input</strong>: Variable that tells the function whether there is an internet connection
+- <strong>Output</strong>: Update Status (success/error)</p>
+<h4><code>createSmallWidget(timings)</code></h4>
+<p>Creates a medium-sized widget displaying all prayer times in a clean list format.
+- <strong>Input</strong>: Object with prayer names and times
+- <strong>Output</strong>: ListWidget with prayer times, and next prayer name</p>
+<h4><code>createMediumWidget(timings)</code></h4>
+<p>Creates a medium-sized widget displaying all prayer times in a clean list format.
+- <strong>Input</strong>: Object with prayer names and times
+- <strong>Output</strong>: ListWidget with prayer times, and time until next prayer</p>
+<h4><code>createLockscreenWidget(timings)</code></h4>
+<p>Creates a lockscreen widget showing only the next prayer and its time.
+- <strong>Input</strong>: Object with next prayer information
+- <strong>Output</strong>: Compact ListWidget for lockscreen</p>
+<h4><code>createWidget(timings)</code></h4>
+<p>Main function that creates the appropriate widget based on <code>config.widgetFamily</code>.</p>
+<h3>Time Management</h3>
+<h4><code>formatPrayerTimes(timings)</code></h4>
+<p>Converts 24-hour prayer times from the API to 12-hour format with AM/PM.
+- Handles all 7 prayer times: Fajr, Sunrise, Dhuhr, Asr, Maghrib, Isha, Midnight
+- <strong>Returns</strong>: Object with formatted times (e.g., "5:30 AM")</p>
+<h4><code>getTimeUntilNextPrayer(timings)</code></h4>
+<p>Calculates which prayer comes next and how much time remains.
+- Compares current time with all prayer times
+- Handles day rollover (if no prayers remain today, next is Fajr tomorrow)
+- <strong>Returns</strong>: Object with <code>prayer</code> name, <code>hours</code>, and <code>minutes</code> until next prayer</p>
+<h3>Network &amp; Data</h3>
+<h4><code>hasGoodInternet(timeoutSeconds = 2)</code></h4>
+<p>Async function that tests internet connectivity by pinging Google's connectivity check server.
+- <strong>Default timeout</strong>: 2 seconds
+- <strong>Returns</strong>: <code>true</code> if connected, <code>false</code> if offline or timeout</p>
+<h3>Data Flow</h3>
+<ol>
+<li><strong>Internet Check</strong>: Tests connectivity with <code>hasGoodInternet()</code></li>
+<li><strong>Online Path</strong>:</li>
+<li>Gets current location using <code>Location.current()</code></li>
+<li>Formats today's date as DD-MM-YYYY</li>
+<li>Calls Aladhan API: <code>https://api.aladhan.com/v1/timings/{date}?latitude={lat}&amp;longitude={lon}</code></li>
+<li>Saves response to local file: <code>prayer_timings.json</code></li>
+<li><strong>Offline Path</strong>:</li>
+<li>Retrieves cached <code>prayer_timings.json</code> from Scriptable's documents folder</li>
+<li>Uses cached data if available; shows error message if not</li>
+</ol>
+<h2>API Integration</h2>
+<p><strong>Service</strong>: Aladhan Prayer Times API (v1)
+- <strong>Endpoint</strong>: <code>https://api.aladhan.com/v1/timings/{date}</code>
+- <strong>Parameters</strong>: 
+  - <code>date</code>: DD-MM-YYYY format
+  - <code>latitude</code>: Device latitude
+  - <code>longitude</code>: Device longitude
+- <strong>Response</strong>: JSON with prayer times for the specified date and location</p>
+<h2>File Storage</h2>
+<ul>
+<li><strong>Cache Location</strong>: Scriptable's local documents folder</li>
+<li><strong>Cache File</strong>: <code>prayer_timings.json</code></li>
+<li><strong>Purpose</strong>: Enables offline access when internet is unavailable</li>
+</ul>
+<h2>Times Displayed</h2>
+<ol>
+<li><strong>Fajr</strong></li>
+<li><strong>Sunrise</strong></li>
+<li><strong>Dhuhr</strong></li>
+<li><strong>Asr</strong></li>
+<li><strong>Maghrib</strong></li>
+<li><strong>Isha</strong></li>
+<li><strong>Midnight</strong></li>
+</ol>
+<h2>Usage</h2>
+<ol>
+<li>Add this script to Scriptable app</li>
+<li>Create a new widget on your home screen or lock screen</li>
+<li>Select this script as the widget source</li>
+<li>Choose widget size (small/medium)</li>
+<li>Widget will automatically update every few minutes with new prayer times</li>
+<li>To pull the latest version of the script, run the script directly from Scriptable</li>
+</ol>
+</body>
+</html>
