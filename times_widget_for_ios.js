@@ -13,8 +13,14 @@ async function updateCode(hasGoodInternet) {
 
   try {
 
+    // Fetch the latest code from GitHub and overwrite the current file, also fetch the guide file to display for user reference
     const url = "https://raw.githubusercontent.com/hassaan-usmani/scriptable_prayerTimes/main/times_widget_for_ios.js"
+    const guideUrl = "https://raw.githubusercontent.com/hassaan-usmani/scriptable_prayerTimes/main/guide.html"
     const req = new Request(url)
+    const guideReq = new Request(guideUrl)
+    const guideString = await guideReq.loadString()
+    const guidePath = files.joinPath(files.documentsDirectory(), "prayer_times_guide.html")
+    files.writeString(guidePath, guideString)
     const codeString = await req.loadString()
     files.writeString(module.filename, codeString)
     return "The code has been updated."
@@ -24,6 +30,49 @@ async function updateCode(hasGoodInternet) {
     console.log("Failed to update code:", err)
     return "Failed to update code."
   }
+}
+
+// Create a function that would run a menu if not running in widget
+async function runMenu() {
+
+  const alert = new Alert()
+  alert.title = "Prayer Times Widget"
+  alert.message = "This script creates a widget displaying daily prayer times based on your location. You can add the widget to your home screen or lock screen.\n\nChoose an option below:"
+  alert.addAction("View Guide")
+  alert.addAction("Check for Updates")
+  alert.addCancelAction("Close")
+  const response = await alert.present()
+
+  if (response === 0) {
+
+    // Retrieve the guide file, check if its stored in iCloud
+
+    let fm = FileManager.local()
+    const iCloudInUse = fm.isFileStoredIniCloud(module.filename)
+    fm = iCloudInUse ? FileManager.iCloud() : fm
+
+    const dir = fm.documentsDirectory()
+    const guidePath = fm.joinPath(dir, "prayer_times_guide.html")
+
+    // Web view loads the file, not the path string, it requires the html string
+    const webView = new WebView()
+    const guideString = fm.readString(guidePath)
+    await webView.loadHTML(guideString, null)
+    webView.present()
+
+  } else if (response === 1) {
+
+    const isInternetOk = await hasGoodInternet(2)
+    const updateMessage = await updateCode(isInternetOk)
+
+    const updateAlert = new Alert()
+    updateAlert.title = "Update Status"
+    updateAlert.message = updateMessage
+    updateAlert.addAction("OK")
+    await updateAlert.present()
+  }
+
+  return
 }
 
 
@@ -501,13 +550,7 @@ if (output["Error"]) {
 
 if (!config.runsInWidget) {
 
-  const updated = await updateCode(isInternetOk)
-
-  const alert = new Alert()
-  alert.title = "Update Status"
-  alert.message = updated
-  alert.addAction("OK")
-  await alert.present()
+  await runMenu()
 }
 
 Script.complete()
