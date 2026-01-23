@@ -40,39 +40,90 @@ async function updateCode(hasGoodInternet) {
   }
 }
 
+async function viewGuide() {
+
+  let fm = FileManager.local()
+  const iCloudInUse = fm.isFileStoredIniCloud(module.filename)
+  fm = iCloudInUse ? FileManager.iCloud() : fm
+
+  const dir = fm.documentsDirectory()
+  const guidePath = fm.joinPath(dir, "prayer_times_guide.html")
+
+  const webView = new WebView()
+  const guideString = fm.readString(guidePath)
+  await webView.loadHTML(guideString, null)
+  webView.present()
+}
+
+async function checkUpdates() {
+
+  const isInternetOk = await hasGoodInternet(2)
+  const updateMessage = await updateCode(isInternetOk)
+
+  const updateAlert = new Alert()
+  updateAlert.title = "Update Status"
+  updateAlert.message = updateMessage
+  updateAlert.addAction("Automatic Updates")
+  updateAlert.addAction("OK")
+  const resp = await updateAlert.present()
+
+  if (resp === 0) {
+
+    await automaticUpdates()
+  }
+
+  await updateAlert.present()
+}
+
+async function automaticUpdates(params) {
+
+  const alert = new Alert()
+  alert.title = "Enable or Disable Automatic Updates"
+  alert.message = "Automatic updates will only occur when you have at least one widget instance running. You will be notified when an update occurs."
+  alert.addAction("Enable")
+  alert.addAction("Disable")
+  alert.addCancelAction("Cancel")
+  const resp = await alert.present()
+  if (resp === 0) {
+
+    const fm = FileManager.local()
+    const dir = fm.documentsDirectory()
+    const filePath = fm.joinPath(dir, "enable_auto_updates.txt")
+    fm.writeString(filePath, "true")
+
+  } else if (resp === 1) {
+
+    const fm = FileManager.local()
+    const dir = fm.documentsDirectory()
+    const filePath = fm.joinPath(dir, "enable_auto_updates.txt")
+    if (fm.fileExists(filePath)) {
+      fm.remove(filePath)
+    }
+  }
+  
+}
+
 async function runMenu() {
 
   const alert = new Alert()
   alert.title = "Prayer Times Widget"
   alert.addAction("View Guide")
   alert.addAction("Check for Updates")
+  alert.addAction("Automatic Updates")
   alert.addCancelAction("Close")
   const response = await alert.present()
 
   if (response === 0) {
 
-    let fm = FileManager.local()
-    const iCloudInUse = fm.isFileStoredIniCloud(module.filename)
-    fm = iCloudInUse ? FileManager.iCloud() : fm
-
-    const dir = fm.documentsDirectory()
-    const guidePath = fm.joinPath(dir, "prayer_times_guide.html")
-
-    const webView = new WebView()
-    const guideString = fm.readString(guidePath)
-    await webView.loadHTML(guideString, null)
-    webView.present()
+    await viewGuide()
 
   } else if (response === 1) {
 
-    const isInternetOk = await hasGoodInternet(2)
-    const updateMessage = await updateCode(isInternetOk)
+    await checkUpdates()
 
-    const updateAlert = new Alert()
-    updateAlert.title = "Update Status"
-    updateAlert.message = updateMessage
-    updateAlert.addAction("OK")
-    await updateAlert.present()
+  } else if (response === 2) {
+
+    await automaticUpdates()
   }
 
   return
@@ -553,15 +604,21 @@ if (!config.runsInWidget) {
 
 } else {
 
-  // Automatic updates (Only when running as a widget)
-  const isInternetOk = await hasGoodInternet(2)
-  const updated = await updateCode(isInternetOk)
-  if (updated === "The code has been updated.") {
+  const fm = FileManager.local()
+  const dir = fm.documentsDirectory()
+  const filePath = fm.joinPath(dir, "enable_auto_updates.txt")
 
-    const notif = new Notification()
-    notif.title = "Updated Prayer Times Widget"
-    notif.body = "A new version of the Prayer Times Widget code has been installed."
-    await notif.schedule()
+  if (fm.fileExists(filePath)) {
+
+    const isInternetOk = await hasGoodInternet(2)
+    const updated = await updateCode(isInternetOk)
+    if (updated === "The code has been updated.") {
+
+      const notif = new Notification()
+      notif.title = "Updated Prayer Times Widget"
+      notif.body = "A new version of the code has was found and installed."
+      await notif.schedule()
+    }
   }
 
   const widget = createWidget(output["timings"] || {})
