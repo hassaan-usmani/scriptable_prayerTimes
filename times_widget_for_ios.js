@@ -545,15 +545,27 @@ if (output["Error"]) {
   Script.setWidget(widget)
   Script.complete()
 
-} else {
-
-  const widget = createWidget(output["timings"] || {})
-  Script.setWidget(widget)
 }
 
 if (!config.runsInWidget) {
 
   await runMenu()
+
+} else {
+
+  // Automatic updates (Only when running as a widget)
+  const isInternetOk = await hasGoodInternet(2)
+  const updated = await updateCode(isInternetOk)
+  if (updated === "The code has been updated.") {
+
+    const notif = new Notification()
+    notif.title = "Updated Prayer Times Widget"
+    notif.body = "A new version of the Prayer Times Widget code has been installed."
+    await notif.schedule()
+  }
+
+  const widget = createWidget(output["timings"] || {})
+  Script.setWidget(widget)
 }
 
 Script.complete()
