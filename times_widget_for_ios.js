@@ -64,15 +64,13 @@ async function checkUpdates() {
   updateAlert.title = "Update Status"
   updateAlert.message = updateMessage
   updateAlert.addAction("Automatic Updates")
-  updateAlert.addAction("OK")
+  updateAlert.addCancelAction("OK")
   const resp = await updateAlert.present()
 
   if (resp === 0) {
 
     await automaticUpdates()
   }
-
-  await updateAlert.present()
 }
 
 async function automaticUpdates(params) {
@@ -84,14 +82,8 @@ async function automaticUpdates(params) {
   alert.addAction("Disable")
   alert.addCancelAction("Cancel")
   const resp = await alert.present()
+  
   if (resp === 0) {
-
-    const fm = FileManager.local()
-    const dir = fm.documentsDirectory()
-    const filePath = fm.joinPath(dir, "enable_auto_updates.txt")
-    fm.writeString(filePath, "true")
-
-  } else if (resp === 1) {
 
     const fm = FileManager.local()
     const dir = fm.documentsDirectory()
@@ -99,6 +91,14 @@ async function automaticUpdates(params) {
     if (fm.fileExists(filePath)) {
       fm.remove(filePath)
     }
+
+  } else if (resp === 1) {
+
+    const fm = FileManager.local()
+    const dir = fm.documentsDirectory()
+    const filePath = fm.joinPath(dir, "enable_auto_updates.txt")
+    fm.writeString(filePath, "false")
+
   }
   
 }
@@ -608,7 +608,7 @@ if (!config.runsInWidget) {
   const dir = fm.documentsDirectory()
   const filePath = fm.joinPath(dir, "enable_auto_updates.txt")
 
-  if (fm.fileExists(filePath)) {
+  if (!fm.fileExists(filePath)) {
 
     const isInternetOk = await hasGoodInternet(2)
     const updated = await updateCode(isInternetOk)
@@ -616,7 +616,7 @@ if (!config.runsInWidget) {
 
       const notif = new Notification()
       notif.title = "Updated Prayer Times Widget"
-      notif.body = "A new version of the code has was found and installed."
+      notif.body = "A new version of the code was found and installed."
       await notif.schedule()
     }
   }
