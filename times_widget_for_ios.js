@@ -13,7 +13,6 @@ async function updateCode(hasGoodInternet) {
 
   try {
 
-    // Fetch the latest code from GitHub and overwrite the current file, also fetch the guide file to display for user reference
     const url = "https://raw.githubusercontent.com/hassaan-usmani/scriptable_prayerTimes/main/times_widget_for_ios.js"
     const guideUrl = "https://raw.githubusercontent.com/hassaan-usmani/scriptable_prayerTimes/main/guide.html"
     const req = new Request(url)
@@ -22,8 +21,17 @@ async function updateCode(hasGoodInternet) {
     const guidePath = files.joinPath(files.documentsDirectory(), "prayer_times_guide.html")
     files.writeString(guidePath, guideString)
     const codeString = await req.loadString()
-    files.writeString(module.filename, codeString)
-    return "The code has been updated."
+
+    console.log(files.readString(module.filename).length)
+    console.log(codeString.length)
+    console.log(files.readString(module.filename) === codeString)
+
+    if (codeString !== files.readString(module.filename)) {
+      files.writeString(module.filename, codeString)
+      return "The code has been updated."
+    } else {
+      return "The code is already up to date."
+    }
 
   } catch (err) {
 
@@ -32,20 +40,16 @@ async function updateCode(hasGoodInternet) {
   }
 }
 
-// Create a function that would run a menu if not running in widget
 async function runMenu() {
 
   const alert = new Alert()
   alert.title = "Prayer Times Widget"
-  alert.message = "This script creates a widget displaying daily prayer times based on your location. You can add the widget to your home screen or lock screen.\n\nChoose an option below:"
   alert.addAction("View Guide")
   alert.addAction("Check for Updates")
   alert.addCancelAction("Close")
   const response = await alert.present()
 
   if (response === 0) {
-
-    // Retrieve the guide file, check if its stored in iCloud
 
     let fm = FileManager.local()
     const iCloudInUse = fm.isFileStoredIniCloud(module.filename)
@@ -54,7 +58,6 @@ async function runMenu() {
     const dir = fm.documentsDirectory()
     const guidePath = fm.joinPath(dir, "prayer_times_guide.html")
 
-    // Web view loads the file, not the path string, it requires the html string
     const webView = new WebView()
     const guideString = fm.readString(guidePath)
     await webView.loadHTML(guideString, null)

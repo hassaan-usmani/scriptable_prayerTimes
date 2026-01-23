@@ -17,8 +17,6 @@ This script creates responsive widgets in three sizes:
 - **Next Prayer Countdown**: Shows hours and minutes until the next prayer
 - **Local Caching**: Saves prayer times locally for offline access
 
-## Main Functions
-
 ### Widget Creation
 
 #### `updateScript(hasGoodInternet)`
