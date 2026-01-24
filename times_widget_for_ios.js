@@ -1,15 +1,15 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
 // icon-color: deep-green; icon-glyph: moon;
-async function updateCode(isInternetOk) {
+async function updateCode(isInternetOk, fmLocal, fmICloud) {
 
   if (!isInternetOk) {
     return "No Internet"
   }
 
-  let files = FileManager.local()
+  let files = fmLocal
   const iCloudInUse = files.isFileStoredIniCloud(module.filename)
-  files = iCloudInUse ? FileManager.iCloud() : files
+  files = iCloudInUse ? fmICloud : files
 
   let codeUpdated = false
   let guideUpdated = false
@@ -51,11 +51,11 @@ async function updateCode(isInternetOk) {
   }
 }
 
-async function viewGuide() {
+async function viewGuide(fmLocal, fmICloud) {
 
-  let fm = FileManager.local()
+  let fm = fmLocal
   const iCloudInUse = fm.isFileStoredIniCloud(module.filename)
-  fm = iCloudInUse ? FileManager.iCloud() : fm
+  fm = iCloudInUse ? fmICloud : fm
 
   const dir = fm.documentsDirectory()
   const guidePath = fm.joinPath(dir, "prayer_times_guide.html")
@@ -66,9 +66,9 @@ async function viewGuide() {
   webView.present()
 }
 
-async function checkUpdates(isInternetOk) {
+async function checkUpdates(isInternetOk, fmLocal, fmICloud) {
 
-  const updateMessage = await updateCode(isInternetOk)
+  const updateMessage = await updateCode(isInternetOk, fmLocal, fmICloud)
 
   const updateAlert = new Alert()
   updateAlert.title = "Update Status"
@@ -79,11 +79,11 @@ async function checkUpdates(isInternetOk) {
 
   if (resp === 0) {
 
-    await automaticUpdates()
+    await automaticUpdates(fmLocal)
   }
 }
 
-async function automaticUpdates() {
+async function automaticUpdates(fmLocal) {
 
   const alert = new Alert()
   alert.title = "Enable or Disable Automatic Updates"
@@ -95,14 +95,14 @@ async function automaticUpdates() {
   
   if (resp === 0) {
 
-    const fm = FileManager.local()
+    const fm = fmLocal
     const dir = fm.documentsDirectory()
     const filePath = fm.joinPath(dir, "enable_auto_updates.txt")
     fm.writeString(filePath, "true")
 
   } else if (resp === 1) {
 
-    const fm = FileManager.local()
+    const fm = fmLocal
     const dir = fm.documentsDirectory()
     const filePath = fm.joinPath(dir, "enable_auto_updates.txt")
     if (fm.fileExists(filePath)) {
@@ -113,7 +113,7 @@ async function automaticUpdates() {
   
 }
 
-async function runMenu(isInternetOk) {
+async function runMenu(isInternetOk, fmLocal, fmICloud) {
 
   const alert = new Alert()
   alert.title = "Prayer Times Widget"
@@ -125,15 +125,15 @@ async function runMenu(isInternetOk) {
 
   if (response === 0) {
 
-    await viewGuide()
+    await viewGuide(fmLocal, fmICloud)
 
   } else if (response === 1) {
 
-    await checkUpdates(isInternetOk)
+    await checkUpdates(isInternetOk, fmLocal, fmICloud)
 
   } else if (response === 2) {
 
-    await automaticUpdates()
+    await automaticUpdates(fmLocal)
   }
 
   return
@@ -321,9 +321,9 @@ function createLockscreenWidget(timings) {
   return widget
 }
 
-async function createWidget() {
+async function createWidget(fmLocal) {
 
-  const timings = await getPrayerTimes()
+  const timings = await getPrayerTimes(fmLocal)
   if (!timings) {
     return null
   }
@@ -490,7 +490,7 @@ async function checkLocationPermission() {
   }
 }
 
-async function retrieveLocation() {
+async function retrieveLocation(fmLocal) {
 
   if (await checkLocationPermission()) {
 
@@ -507,7 +507,7 @@ async function retrieveLocation() {
 
   } else {
 
-    const fm = FileManager.local()
+    const fm = fmLocal
     const dir = fm.documentsDirectory()
     const filePath = fm.joinPath(dir, "prayer_timings.json")
 
@@ -531,11 +531,11 @@ async function retrieveLocation() {
   }
 }
 
-async function getPrayerTimes() {
+async function getPrayerTimes(fmLocal) {
 
   if (await hasGoodInternet(2)) {
 
-    const location = await retrieveLocation()
+    const location = await retrieveLocation(fmLocal)
 
     if (!location) {
 
@@ -565,7 +565,7 @@ async function getPrayerTimes() {
     const data = await req.loadJSON()
     const timings = data.data.timings
 
-    const fm = FileManager.local()
+    const fm = fmLocal
     const dir = fm.documentsDirectory()
     const filePath = fm.joinPath(dir, "prayer_timings.json")
     fm.writeString(filePath, JSON.stringify(data, null, 2))
@@ -583,7 +583,7 @@ async function getPrayerTimes() {
 
   } else {
     
-    const fm = FileManager.local()
+    const fm = fmLocal
     const dir = fm.documentsDirectory()
     const filePath = fm.joinPath(dir, "prayer_timings.json")
 
@@ -617,20 +617,22 @@ async function getPrayerTimes() {
 async function main() {
 
   const isInternetOk = await hasGoodInternet(2)
+  const fmLocal = FileManager.local()
+  const fmICloud = FileManager.iCloud()
 
   if (!config.runsInWidget) {
 
-    await runMenu(isInternetOk)
+    await runMenu(isInternetOk, fmLocal, fmICloud)
 
   } else {
 
-    const fm = FileManager.local()
+    const fm = fmLocal
     const dir = fm.documentsDirectory()
     const filePath = fm.joinPath(dir, "enable_auto_updates.txt")
     
     if (fm.fileExists(filePath)) {
 
-      const updated = await updateCode(isInternetOk)
+      const updated = await updateCode(isInternetOk, fmLocal, fmICloud)
       if (updated === "The code has been updated.") {
 
         const notif = new Notification()
@@ -640,7 +642,7 @@ async function main() {
       }
     }
 
-    const widget = await createWidget()
+    const widget = await createWidget(fmLocal)
     Script.setWidget(widget)
   }
 
