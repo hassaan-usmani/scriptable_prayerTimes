@@ -1,15 +1,18 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
 // icon-color: deep-green; icon-glyph: moon;
-async function updateCode(hasGoodInternet) {
+async function updateCode(isInternetOk) {
 
-  if (!hasGoodInternet) {
+  if (!isInternetOk) {
     return "No Internet"
   }
 
   let files = FileManager.local()
   const iCloudInUse = files.isFileStoredIniCloud(module.filename)
   files = iCloudInUse ? FileManager.iCloud() : files
+
+  let codeUpdated = false
+  let guideUpdated = false
 
   try {
 
@@ -19,23 +22,31 @@ async function updateCode(hasGoodInternet) {
     const guideReq = new Request(guideUrl)
     const guideString = await guideReq.loadString()
     const guidePath = files.joinPath(files.documentsDirectory(), "prayer_times_guide.html")
-    files.writeString(guidePath, guideString)
     const codeString = await req.loadString()
 
-    console.log(files.readString(module.filename).length)
-    console.log(codeString.length)
-    console.log(files.readString(module.filename) === codeString)
+    if (guideString !== files.readString(guidePath)) {
+
+      files.writeString(guidePath, guideString)
+      guideUpdated = true
+    }
 
     if (codeString !== files.readString(module.filename)) {
+
       files.writeString(module.filename, codeString)
+      codeUpdated = true
+    }
+
+    if (guideUpdated || codeUpdated) {
+
       return "The code has been updated."
+
     } else {
+
       return "The code is already up to date."
     }
 
   } catch (err) {
 
-    console.log("Failed to update code:", err)
     return "Failed to update code."
   }
 }
@@ -55,9 +66,8 @@ async function viewGuide() {
   webView.present()
 }
 
-async function checkUpdates() {
+async function checkUpdates(isInternetOk) {
 
-  const isInternetOk = await hasGoodInternet(2)
   const updateMessage = await updateCode(isInternetOk)
 
   const updateAlert = new Alert()
@@ -73,7 +83,7 @@ async function checkUpdates() {
   }
 }
 
-async function automaticUpdates(params) {
+async function automaticUpdates() {
 
   const alert = new Alert()
   alert.title = "Enable or Disable Automatic Updates"
@@ -88,22 +98,22 @@ async function automaticUpdates(params) {
     const fm = FileManager.local()
     const dir = fm.documentsDirectory()
     const filePath = fm.joinPath(dir, "enable_auto_updates.txt")
-    if (fm.fileExists(filePath)) {
-      fm.remove(filePath)
-    }
+    fm.writeString(filePath, "true")
 
   } else if (resp === 1) {
 
     const fm = FileManager.local()
     const dir = fm.documentsDirectory()
     const filePath = fm.joinPath(dir, "enable_auto_updates.txt")
-    fm.writeString(filePath, "false")
+    if (fm.fileExists(filePath)) {
+      fm.remove(filePath)
+    }
 
   }
   
 }
 
-async function runMenu() {
+async function runMenu(isInternetOk) {
 
   const alert = new Alert()
   alert.title = "Prayer Times Widget"
@@ -119,7 +129,7 @@ async function runMenu() {
 
   } else if (response === 1) {
 
-    await checkUpdates()
+    await checkUpdates(isInternetOk)
 
   } else if (response === 2) {
 
@@ -311,7 +321,12 @@ function createLockscreenWidget(timings) {
   return widget
 }
 
-function createWidget(timings) {
+async function createWidget() {
+
+  const timings = await getPrayerTimes()
+  if (!timings) {
+    return null
+  }
 
   if (config.widgetFamily === "medium") {
 
@@ -325,6 +340,22 @@ function createWidget(timings) {
 
     return createLockscreenWidget(timings)
   }
+}
+
+function createErrorWidget(message) {
+
+  const widget = new ListWidget()
+  widget.backgroundColor = new Color("#1A1A1A")
+  let errorText = widget.addText("Error:")
+  errorText.font = Font.boldSystemFont(14)
+  errorText.textColor = Color.red()
+  widget.addSpacer(4)
+  let messageText = widget.addText(message)
+  messageText.font = Font.systemFont(13)
+  messageText.textColor = Color.white()
+  messageText.leftAlignText()
+
+  return widget
 }
 
 function formatPrayerTimes(timings) {
@@ -500,70 +531,46 @@ async function retrieveLocation() {
   }
 }
 
-const isInternetOk = await hasGoodInternet(2)
-const output = {}
+async function getPrayerTimes() {
 
-if (isInternetOk) {
+  if (await hasGoodInternet(2)) {
 
-  const location = await retrieveLocation()
+    const location = await retrieveLocation()
 
-  if (!location) {
+    if (!location) {
 
-    output["Error"] = "Location Permission Denied and No Cached Data Available"
-    const widget = createWidget(output["timings"] || {})
-    Script.setWidget(widget)
-    Script.complete()
-  }
+      const output = "Location Permission Denied and No Cached Data Available"
+      const errorWidget = createErrorWidget(output)
+      Script.setWidget(errorWidget)
+      return null
+    }
 
-  const latitude = location.latitude
-  const longitude = location.longitude
+    const latitude = location.latitude
+    const longitude = location.longitude
 
-  function formatDateDDMMYYYY(date) {
+    function formatDateDDMMYYYY(date) {
 
-    const dd = String(date.getDate()).padStart(2, "0")
-    const mm = String(date.getMonth() + 1).padStart(2, "0")
-    const yyyy = date.getFullYear()
-    return `${dd}-${mm}-${yyyy}`
-  }
+      const dd = String(date.getDate()).padStart(2, "0")
+      const mm = String(date.getMonth() + 1).padStart(2, "0")
+      const yyyy = date.getFullYear()
+      return `${dd}-${mm}-${yyyy}`
+    }
 
-  const formattedDate = formatDateDDMMYYYY(new Date())
+    const formattedDate = formatDateDDMMYYYY(new Date())
 
-  const url = `https://api.aladhan.com/v1/timings/${formattedDate}?latitude=${latitude}&longitude=${longitude}`
+    const url = `https://api.aladhan.com/v1/timings/${formattedDate}?latitude=${latitude}&longitude=${longitude}`
 
-  const req = new Request(url)
-  req.method = "GET"
-  const data = await req.loadJSON()
-  const timings = data.data.timings
-
-  const fm = FileManager.local()
-  const dir = fm.documentsDirectory()
-  const filePath = fm.joinPath(dir, "prayer_timings.json")
-  fm.writeString(filePath, JSON.stringify(data, null, 2))
-
-  const formattedTimes = formatPrayerTimes(timings)
-  const remaining = getTimeUntilNextPrayer(formattedTimes)
-
-  formattedTimes["Next"] = {
-    prayer: remaining.prayer,
-    hours: remaining.hours,
-    minutes: remaining.minutes
-  }
-
-  output["timings"] = formattedTimes
-
-} else {
-  
-  const fm = FileManager.local()
-  const dir = fm.documentsDirectory()
-  const filePath = fm.joinPath(dir, "prayer_timings.json")
-
-  if (fm.fileExists(filePath)) {
-
-    const jsonString = fm.readString(filePath)
-    const data = JSON.parse(jsonString)
+    const req = new Request(url)
+    req.method = "GET"
+    const data = await req.loadJSON()
     const timings = data.data.timings
-    const formattedTimes = formatPrayerTimes(timings)
 
+    const fm = FileManager.local()
+    const dir = fm.documentsDirectory()
+    const filePath = fm.joinPath(dir, "prayer_timings.json")
+    fm.writeString(filePath, JSON.stringify(data, null, 2))
+
+    const formattedTimes = formatPrayerTimes(timings)
     const remaining = getTimeUntilNextPrayer(formattedTimes)
 
     formattedTimes["Next"] = {
@@ -571,59 +578,74 @@ if (isInternetOk) {
       hours: remaining.hours,
       minutes: remaining.minutes
     }
+
+    return formattedTimes
+
+  } else {
     
-    output["timings"] = formattedTimes
+    const fm = FileManager.local()
+    const dir = fm.documentsDirectory()
+    const filePath = fm.joinPath(dir, "prayer_timings.json")
+
+    if (fm.fileExists(filePath)) {
+
+      const jsonString = fm.readString(filePath)
+      const data = JSON.parse(jsonString)
+      const timings = data.data.timings
+      const formattedTimes = formatPrayerTimes(timings)
+
+      const remaining = getTimeUntilNextPrayer(formattedTimes)
+
+      formattedTimes["Next"] = {
+        prayer: remaining.prayer,
+        hours: remaining.hours,
+        minutes: remaining.minutes
+      }
+      
+      return formattedTimes
+
+    } else {
+
+      output = "No Internet Connection and No Cached Data Available"
+      const errorWidget = createErrorWidget(output)
+      Script.setWidget(errorWidget)
+      return null
+    }
+  }
+}
+
+async function main() {
+
+  const isInternetOk = await hasGoodInternet(2)
+
+  if (!config.runsInWidget) {
+
+    await runMenu(isInternetOk)
 
   } else {
 
-    output["Error"] = "No Internet Connection and No Cached Data Available"
-  }
-}
+    const fm = FileManager.local()
+    const dir = fm.documentsDirectory()
+    const filePath = fm.joinPath(dir, "enable_auto_updates.txt")
+    
+    if (fm.fileExists(filePath)) {
 
-if (output["Error"]) {
+      const updated = await updateCode(isInternetOk)
+      if (updated === "The code has been updated.") {
 
-  const widget = new ListWidget()
-  widget.backgroundColor = new Color("#1A1A1A")
-  let errorText = widget.addText("Error:")
-  errorText.font = Font.boldSystemFont(14)
-  errorText.textColor = Color.red()
-  widget.addSpacer(4)
-  let messageText = widget.addText(output["Error"])
-  messageText.font = Font.systemFont(13)
-  messageText.textColor = Color.white()
-  messageText.leftAlignText()
-
-  Script.setWidget(widget)
-  Script.complete()
-
-}
-
-if (!config.runsInWidget) {
-
-  await runMenu()
-
-} else {
-
-  const fm = FileManager.local()
-  const dir = fm.documentsDirectory()
-  const filePath = fm.joinPath(dir, "enable_auto_updates.txt")
-
-  if (!fm.fileExists(filePath)) {
-
-    const isInternetOk = await hasGoodInternet(2)
-    const updated = await updateCode(isInternetOk)
-    if (updated === "The code has been updated.") {
-
-      const notif = new Notification()
-      notif.title = "Updated Prayer Times Widget"
-      notif.body = "A new version of the code was found and installed."
-      await notif.schedule()
+        const notif = new Notification()
+        notif.title = "Updated Prayer Times Widget"
+        notif.body = "A new version of the code was found and installed."
+        await notif.schedule()
+      }
     }
+
+    const widget = await createWidget()
+    Script.setWidget(widget)
   }
 
-  const widget = createWidget(output["timings"] || {})
-  Script.setWidget(widget)
+  Script.complete()
+  return
 }
 
-Script.complete()
-
+await main()
